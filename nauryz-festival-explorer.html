@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nauryz Festival Explorer</title>
+<style>
+  /* ===================== DESIGN TOKENS ===================== */
+  :root{
+    --gold:#d4a017;
+    --gold-light:#f3c94a;
+    --turquoise:#1ba9a0;
+    --turquoise-dark:#0e7a73;
+    --green:#5b9c4f;
+    --white:#fffdf6;
+    --ink:#2b2118;
+    --card:#fffaf0;
+    --shadow: 0 10px 25px rgba(43,33,24,0.18);
+    --radius: 18px;
+    --pattern-line: rgba(212,160,23,0.18);
+  }
+
+  *{ box-sizing:border-box; }
+
+  html,body{
+    margin:0; padding:0;
+    min-height:100vh;
+    font-family:'Trebuchet MS', 'Verdana', sans-serif;
+    color:var(--ink);
+    background:
+      radial-gradient(circle at 15% 20%, rgba(212,160,23,0.18), transparent 40%),
+      radial-gradient(circle at 85% 80%, rgba(27,169,160,0.18), transparent 40%),
+      repeating-linear-gradient(45deg, var(--pattern-line) 0px, var(--pattern-line) 2px, transparent 2px, transparent 26px),
+      linear-gradient(160deg, #fef9ec 0%, #eaf6ee 50%, #e7f7f5 100%);
+    background-attachment: fixed;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  .app{
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 24px 16px 60px;
+    min-height: 100vh;
+    display:flex;
+    flex-direction:column;
+  }
+
+  h1,h2,h3{
+    font-family:'Georgia', 'Trebuchet MS', serif;
+    margin:0 0 8px;
+  }
+
+  .screen{
+    display:none;
+    animation: fadeUp 0.45s ease;
+  }
+  .screen.active{ display:block; }
+
+  @keyframes fadeUp{
+    from{ opacity:0; transform: translateY(14px); }
+    to{ opacity:1; transform: translateY(0); }
+  }
+
+  /* ===================== HEADER / ORNAMENT ===================== */
+  .ornament-band{
+    height: 10px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, var(--gold), var(--turquoise), var(--green), var(--gold));
+    margin-bottom: 18px;
+    box-shadow: var(--shadow);
+  }
+
+  .card{
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 28px 24px;
+    box-shadow: var(--shadow);
+    border: 2px solid rgba(212,160,23,0.35);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .card::before{
+    content:"";
+    position:absolute; inset:0;
+    background: repeating-linear-gradient(135deg, transparent 0 18px, rgba(27,169,160,0.05) 18px 19px);
+    pointer-events:none;
+  }
+
+  /* ===================== START SCREEN ===================== */
+  .badge-sun{
+    width: 86px; height:86px;
+    margin: 0 auto 14px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, var(--gold-light), var(--gold) 70%);
+    display:flex; align-items:center; justify-content:center;
+    font-size: 40px;
+    box-shadow: 0 0 0 6px rgba(212,160,23,0.18), var(--shadow);
+    animation: pulseSun 3.2s ease-in-out infinite;
+  }
+  @keyframes pulseSun{
+    0%,100%{ transform: scale(1); }
+    50%{ transform: scale(1.06); }
+  }
+
+  .title-main{
+    text-align:center;
+    font-size: clamp(28px, 6vw, 40px);
+    color: var(--turquoise-dark);
+    text-shadow: 1px 1px 0 var(--gold-light);
+  }
+  .title-sub{
+    text-align:center;
+    color: var(--green);
+    font-weight:bold;
+    margin-bottom: 18px;
+    letter-spacing: 0.5px;
+  }
+
+  .story-box{
+    background: rgba(27,169,160,0.08);
+    border-left: 5px solid var(--turquoise);
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin: 14px 0 20px;
+    line-height: 1.55;
+    font-size: 15px;
+  }
+
+  .instructions{
+    list-style: none;
+    padding:0;
+    margin: 0 0 22px;
+  }
+  .instructions li{
+    padding: 8px 0 8px 30px;
+    position: relative;
+    line-height:1.4;
+    font-size: 15px;
+  }
+  .instructions li::before{
+    content: "✦";
+    position:absolute; left:0; top:8px;
+    color: var(--gold);
+  }
+
+  /* ===================== BUTTONS ===================== */
+  .btn{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    justify-content:center;
+    font-family: inherit;
+    font-size: 16px;
+    font-weight: bold;
+    padding: 14px 26px;
+    border-radius: 999px;
+    border: none;
+    cursor: pointer;
+    color: var(--white);
+    background: linear-gradient(135deg, var(--turquoise), var(--turquoise-dark));
+    box-shadow: 0 6px 14px rgba(14,122,115,0.35);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .btn:hover{ transform: translateY(-2px); box-shadow: 0 9px 18px rgba(14,122,115,0.4); }
+  .btn:active{ transform: translateY(0); }
+  .btn:focus-visible{ outline: 3px solid var(--gold); outline-offset: 2px; }
+
+  .btn-gold{
+    background: linear-gradient(135deg, var(--gold-light), var(--gold));
+    box-shadow: 0 6px 14px rgba(212,160,23,0.4);
+    color: var(--ink);
+  }
+  .btn-outline{
+    background: transparent;
+    color: var(--turquoise-dark);
+    border: 2px solid var(--turquoise);
+    box-shadow:none;
+  }
+  .btn-outline:hover{ background: rgba(27,169,160,0.1); }
+  .btn:disabled{ opacity:0.5; cursor:not-allowed; transform:none; }
+
+  .btn-row{
+    display:flex;
+    flex-wrap:wrap;
+    gap: 12px;
+    justify-content:center;
+    margin-top: 10px;
+  }
+  .center{ text-align:center; }
+
+  /* ===================== LISTENING SCREEN ===================== */
+  .speaker-circle{
+    width: 110px; height:110px;
+    border-radius: 50%;
+    margin: 0 auto 18px;
+    background: conic-gradient(var(--gold), var(--turquoise), var(--green), var(--gold));
+    display:flex; align-items:center; justify-content:center;
+    box-shadow: var(--shadow);
+    position:relative;
+  }
+  .speaker-circle::after{
+    content:"";
+    position:absolute; inset:8px;
+    border-radius:50%;
+    background: var(--card);
+  }
+  .speaker-icon{
+    position:relative; z-index:1;
+    font-size: 44px;
+  }
+  .speaker-circle.speaking .speaker-icon{
+    animation: bounceIcon 0.6s ease-in-out infinite;
+  }
+  @keyframes bounceIcon{
+    0%,100%{ transform: scale(1); }
+    50%{ transform: scale(1.18); }
+  }
+
+  .status-text{
+    text-align:center;
+    font-style: italic;
+    color: var(--turquoise-dark);
+    min-height: 22px;
+    margin-bottom: 6px;
+  }
+
+  .transcript-box{
+    margin-top: 18px;
+    background: rgba(91,156,79,0.1);
+    border: 2px dashed var(--green);
+    border-radius: 12px;
+    padding: 16px;
+    line-height: 1.6;
+    display:none;
+    font-size: 15px;
+  }
+  .transcript-box.show{ display:block; animation: fadeUp 0.3s ease; }
+
+  /* ===================== QUIZ SCREEN ===================== */
+  .progress-wrap{
+    background: rgba(43,33,24,0.08);
+    border-radius: 999px;
+    height: 14px;
+    overflow:hidden;
+    margin-bottom: 8px;
+  }
+  .progress-fill{
+    height:100%;
+    width:0%;
+    background: linear-gradient(90deg, var(--gold), var(--turquoise));
+    border-radius: 999px;
+    transition: width 0.4s ease;
+  }
+  .progress-label{
+    display:flex; justify-content:space-between;
+    font-size: 13px;
+    color: var(--ink);
+    opacity: 0.75;
+    margin-bottom: 18px;
+  }
+
+  .score-pill{
+    position:absolute;
+    top: 14px; right: 16px;
+    background: var(--gold);
+    color: var(--ink);
+    font-weight:bold;
+    font-size: 13px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+  }
+
+  .q-eyebrow{
+    font-size: 12px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--green);
+    font-weight: bold;
+    margin-bottom: 6px;
+  }
+  .q-text{
+    font-size: 19px;
+    margin-bottom: 18px;
+    line-height: 1.4;
+  }
+
+  .option-list{
+    display:flex;
+    flex-direction:column;
+    gap: 12px;
+  }
+  .option-btn{
+    display:flex;
+    align-items:center;
+    gap: 12px;
+    text-align:left;
+    font-family:inherit;
+    font-size: 15.5px;
+    padding: 14px 16px;
+    border-radius: 12px;
+    border: 2px solid rgba(43,33,24,0.15);
+    background: var(--white);
+    cursor:pointer;
+    transition: all 0.15s ease;
+  }
+  .option-btn:hover:not(:disabled){
+    border-color: var(--turquoise);
+    background: rgba(27,169,160,0.06);
+  }
+  .option-btn:focus-visible{ outline: 3px solid var(--gold); outline-offset: 2px; }
+  .option-letter{
+    width: 26px; height:26px;
+    border-radius: 50%;
+    background: rgba(43,33,24,0.08);
+    display:flex; align-items:center; justify-content:center;
+    font-weight:bold;
+    font-size: 13px;
+    flex-shrink:0;
+  }
+  .option-btn.correct{
+    border-color: var(--green);
+    background: rgba(91,156,79,0.18);
+  }
+  .option-btn.correct .option-letter{ background: var(--green); color: white; }
+  .option-btn.wrong{
+    border-color: #c0392b;
+    background: rgba(192,57,43,0.12);
+  }
+  .option-btn.wrong .option-letter{ background:#c0392b; color:white; }
+  .option-btn:disabled{ cursor:default; }
+
+  .feedback-row{
+    margin-top: 16px;
+    min-height: 26px;
+    font-weight:bold;
+    text-align:center;
+  }
+  .feedback-row.correct-fb{ color: var(--green); }
+  .feedback-row.wrong-fb{ color:#c0392b; }
+
+  /* ===================== END SCREEN ===================== */
+  .badge-display{
+    text-align:center;
+    margin: 8px 0 18px;
+  }
+  .badge-emoji{
+    font-size: 64px;
+    display:block;
+    margin-bottom: 8px;
+    animation: popIn 0.5s ease;
+  }
+  @keyframes popIn{
+    0%{ transform: scale(0); }
+    70%{ transform: scale(1.15); }
+    100%{ transform: scale(1); }
+  }
+  .badge-name{
+    font-size: 22px;
+    font-weight:bold;
+    color: var(--turquoise-dark);
+  }
+  .final-score{
+    text-align:center;
+    font-size: 44px;
+    font-weight:bold;
+    color: var(--gold);
+    text-shadow: 1px 1px 0 var(--turquoise-dark);
+    margin: 4px 0 4px;
+  }
+  .final-score-label{
+    text-align:center;
+    font-size: 13px;
+    text-transform:uppercase;
+    letter-spacing: 1px;
+    opacity:0.7;
+    margin-bottom: 18px;
+  }
+  .feedback-text{
+    text-align:center;
+    font-size: 16px;
+    line-height:1.5;
+    margin-bottom: 22px;
+    padding: 0 6px;
+  }
+
+  /* ===================== VOCAB SCREEN ===================== */
+  .vocab-table{
+    width:100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 15px;
+  }
+  .vocab-table th{
+    text-align:left;
+    padding: 10px 12px;
+    background: var(--turquoise);
+    color:white;
+    border-radius: 8px 8px 0 0;
+  }
+  .vocab-table td{
+    padding: 10px 12px;
+    border-bottom: 1px solid rgba(43,33,24,0.12);
+  }
+  .vocab-table tr:nth-child(even) td{
+    background: rgba(212,160,23,0.08);
+  }
+
+  footer-note{ display:block; }
+  .small-note{
+    text-align:center;
+    font-size: 12px;
+    opacity:0.6;
+    margin-top: 18px;
+  }
+
+  @media (max-width: 480px){
+    .card{ padding: 22px 16px; }
+    .q-text{ font-size: 17px; }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="ornament-band" aria-hidden="true"></div>
+
+  <!-- ===================== START SCREEN ===================== -->
+  <section class="screen active" id="screen-start">
+    <div class="card">
+      <div class="badge-sun" aria-hidden="true">☀️</div>
+      <h1 class="title-main">Nauryz Festival Explorer</h1>
+      <p class="title-sub">A Listening Adventure in Kazakhstan</p>
+
+      <div class="story-box">
+        You are visiting a <strong>Nauryz</strong> celebration in Kazakhstan. Listen carefully,
+        answer the questions, and collect festival points. Score enough points to become a
+        <strong>🏆 Nauryz Master</strong>!
+      </div>
+
+      <ul class="instructions">
+        <li>Press <strong>Play Audio</strong> to listen to the story.</li>
+        <li>You can replay the audio as many times as you like.</li>
+        <li>Answer 5 True/False and 5 Multiple Choice questions.</li>
+        <li>Each correct answer = <strong>+10 points</strong>. Max score = 100.</li>
+      </ul>
+
+      <div class="center">
+        <button class="btn btn-gold" id="btn-start" type="button">🎉 Start the Festival</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== LISTENING SCREEN ===================== -->
+  <section class="screen" id="screen-listen">
+    <div class="card">
+      <h2 class="center">🎧 Listen to the Story</h2>
+      <div class="speaker-circle" id="speaker-circle"><span class="speaker-icon">🔊</span></div>
+      <p class="status-text" id="listen-status">Press "Play Audio" to begin listening.</p>
+
+      <div class="btn-row">
+        <button class="btn" id="btn-play" type="button">▶️ Play Audio</button>
+        <button class="btn btn-outline" id="btn-pause" type="button" disabled>⏸️ Pause</button>
+        <button class="btn btn-outline" id="btn-replay" type="button" disabled>🔁 Replay</button>
+      </div>
+
+      <div class="center" style="margin-top:18px;">
+        <button class="btn btn-outline" id="btn-transcript" type="button">📜 Show Transcript</button>
+      </div>
+
+      <div class="transcript-box" id="transcript-box">
+        Hello! Today we will learn about Nauryz. Nauryz is an important spring festival in Kazakhstan.
+        People celebrate it on March 22. Nauryz means a new day and a new beginning. Families visit
+        relatives and friends. People wear beautiful traditional clothes. They cook a special food
+        called Nauryz Kozhe. It is a soup made from seven ingredients. During the festival, people sing
+        songs, dance, and play traditional games. Nauryz is a happy time for everyone.
+      </div>
+
+      <div class="center" style="margin-top:24px;">
+        <button class="btn btn-gold" id="btn-to-quiz" type="button">Start the Quiz ➡️</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== QUIZ SCREEN ===================== -->
+  <section class="screen" id="screen-quiz">
+    <div class="card" style="position:relative;">
+      <div class="score-pill" id="score-pill">Score: 0</div>
+      <div class="progress-wrap"><div class="progress-fill" id="progress-fill"></div></div>
+      <div class="progress-label">
+        <span id="progress-text">Question 1 of 10</span>
+        <span id="progress-type">True / False</span>
+      </div>
+
+      <p class="q-eyebrow" id="q-eyebrow">QUESTION 1</p>
+      <p class="q-text" id="q-text">Loading question...</p>
+      <div class="option-list" id="option-list"></div>
+      <p class="feedback-row" id="feedback-row"></p>
+
+      <div class="center" style="margin-top:10px;">
+        <button class="btn" id="btn-next" type="button" disabled>Next ➡️</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== END SCREEN ===================== -->
+  <section class="screen" id="screen-end">
+    <div class="card">
+      <div class="badge-display">
+        <span class="badge-emoji" id="badge-emoji">🏆</span>
+        <span class="badge-name" id="badge-name">Nauryz Master</span>
+      </div>
+      <p class="final-score" id="final-score">0</p>
+      <p class="final-score-label">out of 100 points</p>
+      <p class="feedback-text" id="feedback-text">Great job!</p>
+
+      <div class="btn-row">
+        <button class="btn btn-outline" id="btn-vocab" type="button">📖 Learn Vocabulary</button>
+        <button class="btn btn-gold" id="btn-again" type="button">🔄 Play Again</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== VOCABULARY SCREEN ===================== -->
+  <section class="screen" id="screen-vocab">
+    <div class="card">
+      <h2 class="center">📖 Festival Vocabulary</h2>
+      <table class="vocab-table">
+        <thead><tr><th>Word</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Nauryz</strong></td><td>Spring festival</td></tr>
+          <tr><td><strong>Celebrate</strong></td><td>Have a special event</td></tr>
+          <tr><td><strong>Relative</strong></td><td>Family member</td></tr>
+          <tr><td><strong>Traditional</strong></td><td>Following old customs</td></tr>
+          <tr><td><strong>Ingredient</strong></td><td>Food item used in cooking</td></tr>
+          <tr><td><strong>Festival</strong></td><td>Special celebration</td></tr>
+        </tbody>
+      </table>
+      <div class="center">
+        <button class="btn btn-gold" id="btn-vocab-again" type="button">🔄 Play Again</button>
+      </div>
+    </div>
+  </section>
+
+  <p class="small-note">Nauryz Festival Explorer · A2 Listening Game · Works fully offline</p>
+</div>
+
+<script>
+/* =====================================================================
+   NAURYZ FESTIVAL EXPLORER — GAME LOGIC
+   Sections: State, Navigation, Audio (TTS), Sound FX, Quiz, Scoring
+   ===================================================================== */
+
+(function(){
+  "use strict";
+
+  /* ---------------------- 1. GAME DATA ---------------------- */
+  const LISTENING_TEXT = "Hello! Today we will learn about Nauryz. Nauryz is an important spring festival in Kazakhstan. People celebrate it on March 22. Nauryz means a new day and a new beginning. Families visit relatives and friends. People wear beautiful traditional clothes. They cook a special food called Nauryz Kozhe. It is a soup made from seven ingredients. During the festival, people sing songs, dance, and play traditional games. Nauryz is a happy time for everyone.";
+
+  // Each question: type 'tf' (true/false) or 'mc' (multiple choice)
+  const QUESTIONS = [
+    { type:'tf', text:'Nauryz is celebrated in spring.', options:['True','False'], correct:0 },
+    { type:'tf', text:'Nauryz is celebrated on March 22.', options:['True','False'], correct:0 },
+    { type:'tf', text:'Nauryz is a winter festival.', options:['True','False'], correct:1 },
+    { type:'tf', text:'People stay at home and do not visit anyone.', options:['True','False'], correct:1 },
+    { type:'tf', text:'Nauryz Kozhe is made from seven ingredients.', options:['True','False'], correct:0 },
+    { type:'mc', text:'What country is mentioned?', options:['Japan','Kazakhstan','Canada'], correct:1 },
+    { type:'mc', text:'What does Nauryz mean?', options:['New Day','Old Day','Long Night'], correct:0 },
+    { type:'mc', text:'What do people wear?', options:['School uniforms','Sports clothes','Traditional clothes'], correct:2 },
+    { type:'mc', text:'What food is mentioned?', options:['Pizza','Nauryz Kozhe','Sandwich'], correct:1 },
+    { type:'mc', text:'What activities do people do?', options:['Sleep all day','Watch TV only','Sing, dance, and play games'], correct:2 }
+  ];
+
+  const POINTS_PER_CORRECT = 10;
+  const LETTERS = ['A','B','C','D'];
+
+  /* ---------------------- 2. STATE ---------------------- */
+  let state = {
+    currentQuestion: 0,
+    score: 0,
+    answered: false
+  };
+
+  /* ---------------------- 3. SCREEN NAVIGATION ---------------------- */
+  const screens = {
+    start: document.getElementById('screen-start'),
+    listen: document.getElementById('screen-listen'),
+    quiz: document.getElementById('screen-quiz'),
+    end: document.getElementById('screen-end'),
+    vocab: document.getElementById('screen-vocab')
+  };
+
+  function showScreen(name){
+    Object.values(screens).forEach(s => s.classList.remove('active'));
+    screens[name].classList.add('active');
+    window.scrollTo({top:0, behavior:'smooth'});
+  }
+
+  /* ---------------------- 4. AUDIO FEEDBACK (WebAudio, no external files) ---------------------- */
+  let audioCtx = null;
+  function getCtx(){
+    if(!audioCtx){
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    return audioCtx;
+  }
+
+  function playTone(freq, duration, type='sine', delay=0, volume=0.18){
+    try{
+      const ctx = getCtx();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = type;
+      osc.frequency.value = freq;
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      const startTime = ctx.currentTime + delay;
+      gain.gain.setValueAtTime(volume, startTime);
+      gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+      osc.start(startTime);
+      osc.stop(startTime + duration);
+    }catch(e){ /* audio not available, fail silently */ }
+  }
+
+  function playCorrectSound(){
+    playTone(523.25, 0.15, 'sine', 0);     // C5
+    playTone(659.25, 0.15, 'sine', 0.12);  // E5
+    playTone(783.99, 0.2, 'sine', 0.24);   // G5
+  }
+
+  function playWrongSound(){
+    playTone(220, 0.25, 'sawtooth', 0, 0.12);
+    playTone(180, 0.3, 'sawtooth', 0.1, 0.12);
+  }
+
+  function playVictorySound(){
+    [523.25, 587.33, 659.25, 783.99, 880].forEach((f,i)=>{
+      playTone(f, 0.22, 'triangle', i*0.13, 0.15);
+    });
+  }
+
+  /* ---------------------- 5. TEXT-TO-SPEECH ---------------------- */
+  const speakerCircle = document.getElementById('speaker-circle');
+  const listenStatus = document.getElementById('listen-status');
+  const btnPlay = document.getElementById('btn-play');
+  const btnPause = document.getElementById('btn-pause');
+  const btnReplay = document.getElementById('btn-replay');
+  let utterance = null;
+  let isPaused = false;
+
+  function speakPassage(){
+    if(!('speechSynthesis' in window)){
+      listenStatus.textContent = "Sorry, your browser does not support audio narration. Please read the transcript.";
+      return;
+    }
+    window.speechSynthesis.cancel();
+    utterance = new SpeechSynthesisUtterance(LISTENING_TEXT);
+    utterance.rate = 0.82;  // slightly slower for A2 learners
+    utterance.pitch = 1.0;
+    utterance.lang = 'en-US';
+
+    utterance.onstart = () => {
+      speakerCircle.classList.add('speaking');
+      listenStatus.textContent = "Listening... 🎶";
+      btnPlay.disabled = true;
+      btnPause.disabled = false;
+      btnReplay.disabled = false;
+      isPaused = false;
+    };
+    utterance.onend = () => {
+      speakerCircle.classList.remove('speaking');
+      listenStatus.textContent = "Finished! You can replay or continue.";
+      btnPlay.disabled = false;
+      btnPause.disabled = true;
+    };
+    utterance.onerror = () => {
+      speakerCircle.classList.remove('speaking');
+      listenStatus.textContent = "Audio error. Please try Replay.";
+      btnPlay.disabled = false;
+      btnPause.disabled = true;
+    };
+
+    window.speechSynthesis.speak(utterance);
+  }
+
+  btnPlay.addEventListener('click', speakPassage);
+
+  btnReplay.addEventListener('click', () => {
+    window.speechSynthesis.cancel();
+    speakPassage();
+  });
+
+  btnPause.addEventListener('click', () => {
+    if(!('speechSynthesis' in window)) return;
+    if(!isPaused){
+      window.speechSynthesis.pause();
+      isPaused = true;
+      btnPause.textContent = "▶️ Resume";
+      listenStatus.textContent = "Paused.";
+      speakerCircle.classList.remove('speaking');
+    } else {
+      window.speechSynthesis.resume();
+      isPaused = false;
+      btnPause.textContent = "⏸️ Pause";
+      listenStatus.textContent = "Listening... 🎶";
+      speakerCircle.classList.add('speaking');
+    }
+  });
+
+  document.getElementById('btn-transcript').addEventListener('click', () => {
+    const box = document.getElementById('transcript-box');
+    box.classList.toggle('show');
+    const btn = document.getElementById('btn-transcript');
+    btn.textContent = box.classList.contains('show') ? "🙈 Hide Transcript" : "📜 Show Transcript";
+  });
+
+  /* ---------------------- 6. QUIZ LOGIC ---------------------- */
+  const qEyebrow = document.getElementById('q-eyebrow');
+  const qText = document.getElementById('q-text');
+  const optionList = document.getElementById('option-list');
+  const feedbackRow = document.getElementById('feedback-row');
+  const btnNext = document.getElementById('btn-next');
+  const progressFill = document.getElementById('progress-fill');
+  const progressText = document.getElementById('progress-text');
+  const progressType = document.getElementById('progress-type');
+  const scorePill = document.getElementById('score-pill');
+
+  function renderQuestion(){
+    const idx = state.currentQuestion;
+    const q = QUESTIONS[idx];
+    state.answered = false;
+
+    qEyebrow.textContent = `QUESTION ${idx + 1}`;
+    qText.textContent = q.text;
+    progressText.textContent = `Question ${idx + 1} of ${QUESTIONS.length}`;
+    progressType.textContent = q.type === 'tf' ? 'True / False' : 'Multiple Choice';
+    progressFill.style.width = `${(idx / QUESTIONS.length) * 100}%`;
+    scorePill.textContent = `Score: ${state.score}`;
+
+    feedbackRow.textContent = '';
+    feedbackRow.className = 'feedback-row';
+    btnNext.disabled = true;
+
+    optionList.innerHTML = '';
+    q.options.forEach((opt, i) => {
+      const btn = document.createElement('button');
+      btn.className = 'option-btn';
+      btn.type = 'button';
+      btn.innerHTML = `<span class="option-letter">${LETTERS[i]}</span><span>${opt}</span>`;
+      btn.addEventListener('click', () => handleAnswer(i, btn));
+      optionList.appendChild(btn);
+    });
+  }
+
+  function handleAnswer(selectedIndex, btnEl){
+    if(state.answered) return;
+    state.answered = true;
+
+    const q = QUESTIONS[state.currentQuestion];
+    const allButtons = optionList.querySelectorAll('.option-btn');
+    allButtons.forEach(b => b.disabled = true);
+
+    if(selectedIndex === q.correct){
+      state.score += POINTS_PER_CORRECT;
+      btnEl.classList.add('correct');
+      feedbackRow.textContent = "✅ Correct! +10 points";
+      feedbackRow.classList.add('correct-fb');
+      playCorrectSound();
+    } else {
+      btnEl.classList.add('wrong');
+      allButtons[q.correct].classList.add('correct');
+      feedbackRow.textContent = "❌ Not quite. The correct answer is highlighted.";
+      feedbackRow.classList.add('wrong-fb');
+      playWrongSound();
+    }
+
+    scorePill.textContent = `Score: ${state.score}`;
+    btnNext.disabled = false;
+  }
+
+  btnNext.addEventListener('click', () => {
+    state.currentQuestion++;
+    if(state.currentQuestion >= QUESTIONS.length){
+      progressFill.style.width = '100%';
+      finishGame();
+    } else {
+      renderQuestion();
+    }
+  });
+
+  /* ---------------------- 7. SCORING & END SCREEN ---------------------- */
+  function getBadge(score){
+    if(score >= 80) return { emoji:'🏆', name:'Nauryz Master', feedback:'Excellent listening! You understand the Nauryz festival very well.' };
+    if(score >= 60) return { emoji:'🌟', name:'Festival Friend', feedback:'Good work! You understood most of the information.' };
+    if(score >= 40) return { emoji:'🙂', name:'Spring Visitor', feedback:'Keep practicing your listening skills and try again.' };
+    return { emoji:'🌱', name:'Beginner Explorer', feedback:'Keep practicing your listening skills and try again.' };
+  }
+
+  function finishGame(){
+    const badge = getBadge(state.score);
+    document.getElementById('badge-emoji').textContent = badge.emoji;
+    document.getElementById('badge-name').textContent = badge.name;
+    document.getElementById('final-score').textContent = state.score;
+    document.getElementById('feedback-text').textContent = badge.feedback;
+
+    showScreen('end');
+    if(state.score >= 80){
+      playVictorySound();
+    }
+  }
+
+  /* ---------------------- 8. RESET / NAVIGATION BUTTONS ---------------------- */
+  function resetGame(){
+    state.currentQuestion = 0;
+    state.score = 0;
+    state.answered = false;
+    window.speechSynthesis && window.speechSynthesis.cancel();
+    btnPlay.disabled = false;
+    btnPause.disabled = true;
+    btnPause.textContent = "⏸️ Pause";
+    btnReplay.disabled = true;
+    listenStatus.textContent = "Press \"Play Audio\" to begin listening.";
+    document.getElementById('transcript-box').classList.remove('show');
+    document.getElementById('btn-transcript').textContent = "📜 Show Transcript";
+    showScreen('start');
+  }
+
+  document.getElementById('btn-start').addEventListener('click', () => showScreen('listen'));
+  document.getElementById('btn-to-quiz').addEventListener('click', () => {
+    window.speechSynthesis && window.speechSynthesis.cancel();
+    state.currentQuestion = 0;
+    state.score = 0;
+    showScreen('quiz');
+    renderQuestion();
+  });
+  document.getElementById('btn-vocab').addEventListener('click', () => showScreen('vocab'));
+  document.getElementById('btn-again').addEventListener('click', resetGame);
+  document.getElementById('btn-vocab-again').addEventListener('click', resetGame);
+
+})();
+</script>
+
+</body>
+</html>
